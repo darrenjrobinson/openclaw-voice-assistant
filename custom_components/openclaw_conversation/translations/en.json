@@ -1,0 +1,92 @@
+{
+    "config": {
+        "error": {
+            "cannot_connect": "Failed to connect",
+            "invalid_auth": "Invalid authentication",
+            "unknown": "Unexpected error"
+        },
+        "step": {
+            "user": {
+                "data": {
+                    "name": "Name",
+                    "openclaw_url": "OpenClaw URL",
+                    "api_key": "Gateway Token",
+                    "verify_ssl": "Verify SSL certificate"
+                },
+                "data_description": {
+                    "openclaw_url": "The base URL of your OpenClaw instance",
+                    "api_key": "Your OpenClaw Gateway token",
+                    "verify_ssl": "Disable to allow self-signed certificates"
+                }
+            }
+        }
+    },
+    "options": {
+        "error": {
+            "cannot_connect": "Failed to connect",
+            "invalid_auth": "Invalid authentication",
+            "unknown": "Unexpected error"
+        },
+        "step": {
+            "init": {
+                "data": {
+                    "openclaw_url": "OpenClaw URL",
+                    "api_key": "Gateway Token",
+                    "verify_ssl": "Verify SSL certificate"
+                },
+                "data_description": {
+                    "openclaw_url": "The base URL of your OpenClaw instance",
+                    "api_key": "Your OpenClaw Gateway token",
+                    "verify_ssl": "Disable to allow self-signed certificates"
+                }
+            }
+        }
+    },
+    "config_subentries": {
+        "conversation": {
+            "entry_type": "Conversation agent",
+            "initiate_flow": {
+                "reconfigure": "Reconfigure conversation agent",
+                "user": "Add conversation agent"
+            },
+            "step": {
+                "init": {
+                    "data": {
+                        "name": "Name",
+                        "ha_mcp_url": "HA MCP Server URL",
+                        "prompt": "Prompt Template",
+                        "agent_id": "Agent ID",
+                        "session_key": "Session Key",
+                        "context_threshold": "Context Threshold",
+                        "context_truncate_strategy": "Context truncation strategy"
+                    },
+                    "data_description": {
+                        "ha_mcp_url": "The URL of your ha-mcp server",
+                        "agent_id": "The agent to use (run 'openclaw agents list' to see options, default: main)",
+                        "session_key": "Optional key for session persistence (run 'openclaw sessions list' to see sessions)"
+                    }
+                }
+            }
+        },
+        "ai_task_data": {
+            "entry_type": "AI Task agent",
+            "initiate_flow": {
+                "reconfigure": "Reconfigure AI Task agent",
+                "user": "Add AI Task agent"
+            },
+            "step": {
+                "init": {
+                    "data": {
+                        "name": "Name",
+                        "agent_id": "Agent ID",
+                        "session_key": "Session Key"
+                    },
+                    "data_description": {
+                        "agent_id": "The agent to use (run 'openclaw agents list' to see options, default: main)",
+                        "session_key": "Optional key for session persistence (run 'openclaw sessions list' to see sessions)"
+                    }
+                }
+            }
+        }
+    }
+}
