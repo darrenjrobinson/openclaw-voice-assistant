@@ -31,6 +31,17 @@ This fork routes requests using the configured Agent ID:
 
 ## Installation
 
+## Migration from upstream (quick steps)
+
+1. In HACS, remove/disable the upstream custom repository if you previously added it.
+2. Add your AlfredPatch fork as a Custom Repository (category: Integration).
+3. Install/update **OpenClaw Conversation AlfredPatch** from HACS.
+4. Restart Home Assistant.
+5. Open the integration and verify:
+   - OpenClaw URL + Gateway Token are valid
+   - `Agent ID` is set to your custom agent (example: `alfred`)
+   - `Session Key` is stable (example: `agent:alfred:homeassistant`)
+
 ### HACS (Recommended)
 
 1. Open HACS in Home Assistant
