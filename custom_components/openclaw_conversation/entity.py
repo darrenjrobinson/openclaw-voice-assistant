@@ -168,10 +168,22 @@ class OpenClawBaseLLMEntity(Entity):
         # 1) explicit model override, 2) openclaw:<agent_id>, 3) openclaw default
         agent_id = self.subentry.data.get(CONF_AGENT_ID, DEFAULT_AGENT_ID)
         model_override = (self.subentry.data.get(CONF_MODEL_OVERRIDE) or "").strip()
+        model_source = (
+            "override"
+            if model_override
+            else ("agent" if agent_id else "default")
+        )
         model_name = (
             model_override
             if model_override
             else (f"openclaw:{agent_id}" if agent_id else "openclaw")
+        )
+        _LOGGER.debug(
+            "OpenClaw request model selection: source=%s model=%s agent_id=%s session_key=%s",
+            model_source,
+            model_name,
+            agent_id,
+            self.subentry.data.get(CONF_SESSION_KEY, ""),
         )
         api_kwargs: dict[str, Any] = {
             "model": model_name,

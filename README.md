@@ -94,10 +94,15 @@ After adding the integration, you need to add a conversation agent:
 | HA MCP Server URL | Your ha-mcp server URL (e.g., `http://homeassistant.local:9583/private_XXXXX`)      |
 | Prompt Template   | System prompt with Jinja2 template support                                          |
 | Agent ID          | The agent to use (run `openclaw agents list` to see options, default: `main`)       |
+| Model Override    | Optional explicit model (e.g. `ollama/openclaw-32k`, `openai-codex/gpt-5.3-codex`) |
 | Session Key       | Optional key for session persistence (run `openclaw sessions list` to see sessions) |
 
 > **Agent ID:** Run `openclaw agents list` on your OpenClaw instance to see all configured agents. Most users will use `main` (the default).
 
+> **Model selection priority:** `Model Override` → `openclaw:<agent_id>` → `openclaw` fallback.
+>
+> **Operational recommendation:** For the most deterministic behavior, set the model directly on your OpenClaw agent (`openclaw agents list` / agent config) and use Model Override only for temporary testing.
+>
 > **Session Key:** Setting a specific session key allows conversation context to persist between invocations (until it grows large enough to be auto-compacted). Run `openclaw sessions list` to see existing sessions. For example, `agent:main:homeassistant` creates a dedicated session for Home Assistant conversations.
 
 ## Usage
