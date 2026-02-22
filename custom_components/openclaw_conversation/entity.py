@@ -163,9 +163,11 @@ class OpenClawBaseLLMEntity(Entity):
         """Generate an answer for the chat log with streaming support."""
         messages = _convert_content_to_param(chat_log.content)
 
-        # Build API parameters - OpenClaw handles model selection
+        # Build API parameters - route to configured OpenClaw agent via model alias
+        agent_id = self.subentry.data.get(CONF_AGENT_ID, DEFAULT_AGENT_ID)
+        model_name = f"openclaw:{agent_id}" if agent_id else "openclaw"
         api_kwargs: dict[str, Any] = {
-            "model": "openclaw",
+            "model": model_name,
             "user": self.entity_id,  # Send entity_id for session correlation
             "stream": True,
         }

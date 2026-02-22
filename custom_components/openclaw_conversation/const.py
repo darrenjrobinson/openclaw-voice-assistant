@@ -1,9 +1,9 @@
 """Constants for the OpenClaw Conversation integration."""
 
 DOMAIN = "openclaw_conversation"
-DEFAULT_NAME = "OpenClaw Conversation"
-DEFAULT_CONVERSATION_NAME = "OpenClaw Conversation"
-DEFAULT_AI_TASK_NAME = "OpenClaw AI Task"
+DEFAULT_NAME = "OpenClaw Conversation AlfredPatch"
+DEFAULT_CONVERSATION_NAME = "OpenClaw Conversation AlfredPatch"
+DEFAULT_AI_TASK_NAME = "OpenClaw AI Task AlfredPatch"
 
 # Config flow fields
 CONF_OPENCLAW_URL = "openclaw_url"
