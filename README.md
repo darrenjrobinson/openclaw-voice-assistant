@@ -109,6 +109,16 @@ After adding the integration, you need to add a conversation agent:
 
 The agent uses [mcporter](http://mcporter.dev/) to communicate with Home Assistant via the [ha-mcp](https://homeassistant-ai.github.io/ha-mcp/) server. It can search for entities, control devices, manage automations, and more.
 
+## Troubleshooting notes for maintainers
+
+### "Found 2 occurrences of the text" during patching
+
+If you use exact-match editors (or scripted text replacement), this error means the snippet you are replacing appears more than once in the file. In this repo, `strings.json` often has repeated keys between `conversation` and `ai_task_data` sections.
+
+- ~~Use a short snippet only~~
+  - Comment: This is brittle and can fail with duplicate matches.
+- Prefer a larger, unique context block (include nearby section headers/keys) so only one occurrence matches.
+
 ## Logging
 
 Add to `configuration.yaml` to enable debug logging:
