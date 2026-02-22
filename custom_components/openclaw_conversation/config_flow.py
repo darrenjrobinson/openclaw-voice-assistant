@@ -41,6 +41,7 @@ from .const import (
     CONF_CONTEXT_THRESHOLD,
     CONF_CONTEXT_TRUNCATE_STRATEGY,
     CONF_HA_MCP_URL,
+    CONF_MODEL_OVERRIDE,
     CONF_OPENCLAW_URL,
     CONF_PROMPT,
     CONF_SESSION_KEY,
@@ -49,6 +50,7 @@ from .const import (
     DEFAULT_AGENT_ID,
     DEFAULT_AI_TASK_NAME,
     DEFAULT_CONTEXT_THRESHOLD,
+    DEFAULT_MODEL_OVERRIDE,
     DEFAULT_CONTEXT_TRUNCATE_STRATEGY,
     DEFAULT_CONVERSATION_NAME,
     DEFAULT_NAME,
@@ -77,6 +79,7 @@ DEFAULT_OPTIONS = types.MappingProxyType(
     {
         CONF_PROMPT: DEFAULT_PROMPT,
         CONF_AGENT_ID: DEFAULT_AGENT_ID,
+        CONF_MODEL_OVERRIDE: DEFAULT_MODEL_OVERRIDE,
         CONF_SESSION_KEY: DEFAULT_SESSION_KEY,
         CONF_CONTEXT_THRESHOLD: DEFAULT_CONTEXT_THRESHOLD,
         CONF_CONTEXT_TRUNCATE_STRATEGY: DEFAULT_CONTEXT_TRUNCATE_STRATEGY,
@@ -259,6 +262,10 @@ class OpenClawSubentryFlowHandler(ConfigSubentryFlow):
             vol.Optional(
                 CONF_AGENT_ID,
                 default=DEFAULT_AGENT_ID,
+            ): str,
+            vol.Optional(
+                CONF_MODEL_OVERRIDE,
+                default=DEFAULT_MODEL_OVERRIDE,
             ): str,
             vol.Optional(
                 CONF_SESSION_KEY,

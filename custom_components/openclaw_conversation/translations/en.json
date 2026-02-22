@@ -56,6 +56,7 @@
                         "ha_mcp_url": "HA MCP Server URL",
                         "prompt": "Prompt Template",
                         "agent_id": "Agent ID",
+                        "model_override": "Model Override (optional)",
                         "session_key": "Session Key",
                         "context_threshold": "Context Threshold",
                         "context_truncate_strategy": "Context truncation strategy"
@@ -63,6 +64,7 @@
                     "data_description": {
                         "ha_mcp_url": "The URL of your ha-mcp server",
                         "agent_id": "The agent to use (run 'openclaw agents list' to see options, default: main)",
+                        "model_override": "Optional explicit model (e.g., 'ollama/openclaw-32k' or 'openai-codex/gpt-5.3-codex'). If set, this overrides Agent ID model routing.",
                         "session_key": "Optional key for session persistence (run 'openclaw sessions list' to see sessions)"
                     }
                 }

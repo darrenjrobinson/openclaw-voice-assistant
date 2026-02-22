@@ -10,10 +10,12 @@ CONF_OPENCLAW_URL = "openclaw_url"
 CONF_HA_MCP_URL = "ha_mcp_url"
 CONF_SESSION_KEY = "session_key"
 CONF_AGENT_ID = "agent_id"
+CONF_MODEL_OVERRIDE = "model_override"
 CONF_VERIFY_SSL = "verify_ssl"
 
 # Defaults
 DEFAULT_AGENT_ID = "main"
+DEFAULT_MODEL_OVERRIDE = ""
 DEFAULT_SESSION_KEY = ""
 DEFAULT_VERIFY_SSL = True
 

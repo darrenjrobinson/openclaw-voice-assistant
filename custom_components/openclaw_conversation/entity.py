@@ -23,6 +23,7 @@ from .const import (
     CONF_AGENT_ID,
     CONF_CONTEXT_THRESHOLD,
     CONF_CONTEXT_TRUNCATE_STRATEGY,
+    CONF_MODEL_OVERRIDE,
     CONF_OPENCLAW_URL,
     CONF_SESSION_KEY,
     CONF_VERIFY_SSL,
@@ -163,9 +164,15 @@ class OpenClawBaseLLMEntity(Entity):
         """Generate an answer for the chat log with streaming support."""
         messages = _convert_content_to_param(chat_log.content)
 
-        # Build API parameters - route to configured OpenClaw agent via model alias
+        # Build API parameters with model priority:
+        # 1) explicit model override, 2) openclaw:<agent_id>, 3) openclaw default
         agent_id = self.subentry.data.get(CONF_AGENT_ID, DEFAULT_AGENT_ID)
-        model_name = f"openclaw:{agent_id}" if agent_id else "openclaw"
+        model_override = (self.subentry.data.get(CONF_MODEL_OVERRIDE) or "").strip()
+        model_name = (
+            model_override
+            if model_override
+            else (f"openclaw:{agent_id}" if agent_id else "openclaw")
+        )
         api_kwargs: dict[str, Any] = {
             "model": model_name,
             "user": self.entity_id,  # Send entity_id for session correlation
