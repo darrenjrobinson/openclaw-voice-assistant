@@ -202,3 +202,16 @@ systemctl restart wyoming-satellite
 
 After the change, phrase audio peaks improved from roughly `-38/-41 dBFS` to about `-33 dBFS`, but wake detection still depended on Home Assistant/openWakeWord recognising the model.
 
+
+### Wake model naming gotcha: `ok_nabu` vs `okay_nabu`
+
+Home Assistant's wake-word documentation refers to **"ok nabu"** for the openWakeWord add-on. Some ESPHome/microWakeWord examples use `okay_nabu`. Do not assume these are interchangeable.
+
+When debugging no-detection cases, use the openWakeWord add-on log as the source of truth:
+
+```text
+Loaded models: [...]
+```
+
+Then make the Assist pipeline's streaming wake word match the loaded model/display entry exactly. A mismatch between `ok_nabu` and `okay_nabu` can leave the satellite connected and streaming forever with no `detection` event.
+
