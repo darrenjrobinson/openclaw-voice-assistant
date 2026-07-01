@@ -109,3 +109,96 @@ openclaw:main
 - Use the LAN endpoint only on trusted networks.
 - Do not expose OpenClaw Gateway or the ReSpeaker Wyoming port directly to the internet.
 - Prefer a dedicated Home Assistant/OpenClaw agent instead of routing HA traffic into the main Telegram session.
+
+## 8. ReSpeaker-side wake detection instrumentation
+
+If the satellite appears connected but the wake word never fires, add local event hooks to `wyoming-satellite`. These hooks prove whether Home Assistant is sending lifecycle events back to the satellite.
+
+On the ReSpeaker, a logger was installed as:
+
+```text
+/usr/local/bin/wyoming-event-log
+/var/log/wyoming-satellite-events.log
+```
+
+The satellite launcher now includes event commands for:
+
+```text
+startup
+streaming-start
+streaming-stop
+detect
+detection
+stt-start
+stt-stop
+transcript
+synthesize
+tts-start
+tts-stop
+error
+```
+
+Expected healthy wake sequence:
+
+```text
+startup
+streaming-start
+detect
+detection
+stt-start
+stt-stop
+transcript
+synthesize
+tts-start
+tts-stop
+```
+
+Observed post-reboot failure sequence:
+
+```text
+startup
+streaming-start
+detect
+```
+
+No `detection` followed after saying the wake phrase. That proves:
+
+- Home Assistant is connected to the satellite.
+- Home Assistant has instructed the satellite to stream audio for wake detection.
+- The ReSpeaker audio transport is alive.
+- The wake engine did not recognise the phrase.
+
+At that point, inspect the Home Assistant openWakeWord add-on logs. Confirm the loaded model ID exactly matches the pipeline wake word selection. Watch for:
+
+```text
+Loaded models: [...]
+Receiving audio from client
+Detected ...
+```
+
+### ReSpeaker mixer note
+
+One ReSpeaker image booted with `CH1 volume` much lower than the other channels:
+
+```text
+CH1 volume = 52
+CH2-CH8 volume = 161
+```
+
+For this build, `CH1 volume` was changed to `161` to match the other channels. Before changing mixer settings, save backups:
+
+```bash
+mkdir -p /root/oc-backups
+amixer -c 0 scontents > /root/oc-backups/amixer-scontents-before.txt
+alsactl -f /root/oc-backups/asound-state-before.state store 0
+```
+
+Then set CH1:
+
+```bash
+amixer -c 0 sset 'CH1 volume' 161
+systemctl restart wyoming-satellite
+```
+
+After the change, phrase audio peaks improved from roughly `-38/-41 dBFS` to about `-33 dBFS`, but wake detection still depended on Home Assistant/openWakeWord recognising the model.
+
