@@ -1,4 +1,16 @@
-# OpenClaw Conversation AlfredPatch
+# OpenClaw Voice Assistant
+
+Home Assistant local voice pipeline and OpenClaw conversation bridge for Marvin-style voice assistants.
+
+This repository is based on the OpenClaw Conversation AlfredPatch fork and is customised for Darren Robinson's Marvin Voice Assistant build. It keeps the Home Assistant custom integration installable while adding as-built documentation, smoke-test tooling, and provenance for the OpenClaw/Home Assistant voice bridge.
+
+See also:
+
+- [AS_BUILT.md](AS_BUILT.md) — Marvin voice assistant bridge as-built summary
+- [docs/marvin-openclaw-bridge.md](docs/marvin-openclaw-bridge.md) — Home Assistant/OpenClaw bridge configuration guide
+- [NOTICE.md](NOTICE.md) — upstream lineage and provenance
+
+---
 
 A Home Assistant custom component that uses [OpenClaw](https://openclaw.io) as the AI backend for conversation and AI task platforms.
 
