@@ -196,3 +196,58 @@ Loaded models: [...]
 ```
 
 Then make the Assist pipeline streaming wake word match the loaded model/display entry exactly. A mismatch between `ok_nabu` and `okay_nabu` can leave the satellite connected and streaming forever with no `detection` event.
+
+## 9. ReSpeaker playback fix: use `plughw` not `hw`
+
+After wake detection and STT began working, the ReSpeaker still failed to play TTS audio with:
+
+```text
+aplay: set_params:1349: Channels count non available
+```
+
+The launcher was using the raw hardware device:
+
+```bash
+aplay -D hw:0,1 -r 22050 -f S16_LE -c 1 -t raw
+```
+
+That device rejected the mono/channel parameters. The fix was to use ALSA's plugin wrapper so it can perform the required conversion:
+
+```bash
+aplay -D plughw:0,1 -r 22050 -f S16_LE -c 1 -t raw
+```
+
+Applied in:
+
+```text
+/home/marvin/.config/wyoming-satellite/run.sh
+```
+
+Backup:
+
+```text
+/home/marvin/.config/wyoming-satellite/run.sh.bak.playback.20260701-111121
+```
+
+Post-fix validation showed a complete event sequence:
+
+```text
+detection input=okay_nabu
+stt-start
+stt-stop
+transcript input=What is tomorrow going to bring?
+synthesize input=Sorry, I am not aware of any device called tomorrow going to bring
+tts-start
+tts-stop
+```
+
+The journal showed playback started:
+
+```text
+Playing raw data 'stdin' : Signed 16 bit Little Endian, Rate 22050 Hz, Mono
+```
+
+…and the previous channel-count error did not repeat.
+
+At this point the wake/STT/TTS transport path is functional. Remaining issues are conversation-agent semantics/routing, for example Home Assistant treating a general phrase as a device-control intent instead of passing it to the intended OpenClaw conversation agent.
+
