@@ -10,7 +10,7 @@ This project, **OpenClaw Voice Assistant**, is derived from the OpenClaw Home As
 
 ## Why this repository exists
 
-This repository is the canonical home for Darren Robinson's Marvin voice assistant build: a Home Assistant local voice pipeline connected to OpenClaw through the OpenAI-compatible chat-completions gateway.
+This repository is the canonical home for the Marvin/OpenClaw voice assistant build: a Home Assistant local voice pipeline connected to OpenClaw through the OpenAI-compatible chat-completions gateway.
 
 The base AlfredPatch fork was selected because it supports OpenClaw agent routing by sending:
 
