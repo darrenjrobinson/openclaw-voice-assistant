@@ -2,154 +2,206 @@
 
 Home Assistant local voice pipeline and OpenClaw conversation bridge for Marvin-style voice assistants.
 
-This repository is based on the OpenClaw Conversation AlfredPatch fork and is customised for Darren Robinson's Marvin Voice Assistant build. It keeps the Home Assistant custom integration installable while adding as-built documentation, smoke-test tooling, and provenance for the OpenClaw/Home Assistant voice bridge.
+This repository packages a Home Assistant custom integration derived from the OpenClaw Conversation / AlfredPatch lineage, with public-ready documentation, smoke-test tooling, and notes for wiring a local voice satellite through Home Assistant Assist to OpenClaw.
 
-See also:
+## What it does
 
-- [AS_BUILT.md](AS_BUILT.md) — Marvin voice assistant bridge as-built summary
-- [docs/marvin-openclaw-bridge.md](docs/marvin-openclaw-bridge.md) — Home Assistant/OpenClaw bridge configuration guide
-- [NOTICE.md](NOTICE.md) — upstream lineage and provenance
+The integration sends Home Assistant conversation turns to the OpenClaw OpenAI-compatible `/v1/chat/completions` endpoint and supports explicit OpenClaw agent routing.
 
----
+```text
+Voice satellite / Assist input
+  → Home Assistant Assist pipeline
+  → OpenClaw Conversation AlfredPatch
+  → OpenClaw Gateway /v1/chat/completions
+  → OpenClaw agent/session
+```
 
-A Home Assistant custom component that uses [OpenClaw](https://openclaw.io) as the AI backend for conversation and AI task platforms.
+Useful when you want a local Home Assistant voice assistant backed by an OpenClaw agent instead of a generic cloud assistant. Because apparently light switches now require distributed systems. Obviously.
 
-## Why this fork exists (AlfredPatch)
+## Why this fork exists
 
-This fork exists to support **custom OpenClaw agent routing** reliably (for example, a dedicated `alfred` house-butler agent instead of always using `main`).
+The important AlfredPatch behaviour is custom OpenClaw agent routing.
 
-### What changed and why it was necessary
+Instead of always sending a static model value:
 
-The upstream integration sends chat requests with a static model value:
+```json
+{
+  "model": "openclaw"
+}
+```
 
-- ~~`"model": "openclaw"`~~
-  - Comment: This can cause requests to fall back to default model behavior, even when `Agent ID` is set.
+this fork can route requests with the configured Agent ID:
 
-This fork routes requests using the configured Agent ID:
+```json
+{
+  "model": "openclaw:<agent_id>"
+}
+```
 
-- `"model": "openclaw:<agent_id>"` (example: `openclaw:alfred`)
-  - Comment: This aligns the OpenAI-compatible request with OpenClaw's agent routing so custom agents, prompts, tools, and model selections are actually applied.
+For example:
 
-### Scope of differences
+```json
+{
+  "model": "openclaw:alfred"
+}
+```
 
-- Keeps upstream behavior and docs **as-is** unless needed for this routing fix.
-- Adds light branding in Home Assistant so you can identify this fork as **OpenClaw Conversation AlfredPatch**.
+That lets Home Assistant target a dedicated house/voice agent with its own prompt, tools, session key, and model settings rather than polluting your default OpenClaw chat session.
 
 ## Features
 
-- Voice and text conversations with AI-powered responses
-- Control Home Assistant devices through natural language via [ha-mcp](https://homeassistant-ai.github.io/ha-mcp/)
-- AI Task entity for structured data generation
+- Home Assistant conversation agent backed by OpenClaw
+- Optional AI Task entity support
+- Configurable OpenClaw URL and Gateway token
+- Configurable Agent ID and stable Session Key
+- Optional explicit Model Override for testing
+- OpenClaw gateway smoke-test script
+- Documentation for Home Assistant Assist, HACS, and ReSpeaker/Wyoming-style satellite deployments
 
 ## Installation
 
-## Migration from upstream (quick steps)
+### HACS custom repository
 
-1. In HACS, remove/disable the upstream custom repository if you previously added it.
-2. Add your AlfredPatch fork as a Custom Repository (category: Integration).
-3. Install/update **OpenClaw Conversation AlfredPatch** from HACS.
-4. Restart Home Assistant.
-5. Open the integration and verify:
-   - OpenClaw URL + Gateway Token are valid
-   - `Agent ID` is set to your custom agent (example: `alfred`)
-   - `Session Key` is stable (example: `agent:alfred:homeassistant`)
+1. Open **HACS** in Home Assistant.
+2. Open the menu → **Custom repositories**.
+3. Add this repository URL:
 
-### HACS (Recommended)
+   ```text
+   https://github.com/darrenjrobinson/openclaw-voice-assistant
+   ```
 
-1. Open HACS in Home Assistant
-2. Click the three dots menu → Custom repositories
-3. ~~Add `https://github.com/Djelibeybi/openclaw_conversation` with category "Integration"~~
-   - Comment: For AlfredPatch, add your fork URL instead (for example, `https://github.com/core-runtime/openclaw_conversation`).
-4. ~~Search for "OpenClaw Conversation" and install~~
-   - Comment: Search for **"OpenClaw Conversation AlfredPatch"** and install
-5. Restart Home Assistant
+4. Category: **Integration**.
+5. Install **OpenClaw Conversation AlfredPatch**.
+6. Restart Home Assistant.
 
-### Manual
+### Manual install
 
-1. Copy `custom_components/openclaw_conversation/` to your Home Assistant `config/custom_components/` directory
-2. Restart Home Assistant
+1. Copy `custom_components/openclaw_conversation/` to your Home Assistant `config/custom_components/` directory.
+2. Restart Home Assistant.
 
 ## Prerequisites
 
 Before configuring this integration, you need:
 
-1. **OpenClaw** installed and running
-2. **[ha-mcp](https://homeassistant-ai.github.io/ha-mcp/)** server running (provides Home Assistant control to the agent)
-3. **[mcporter](http://mcporter.dev/)** installed on the OpenClaw host
+1. **OpenClaw** installed and running.
+2. A Home Assistant Assist pipeline.
+3. Optional: **[ha-mcp](https://homeassistant-ai.github.io/ha-mcp/)** if you want the OpenClaw agent to control Home Assistant entities.
+4. Optional: **[mcporter](http://mcporter.dev/)** on the OpenClaw host if your prompt/tools use MCP via command calls.
 
-See the [ha-mcp setup guide](docs/ha-mcp-setup.md) for detailed installation instructions.
+See [docs/ha-mcp-setup.md](docs/ha-mcp-setup.md) for one ha-mcp setup path.
 
 ## Configuration
 
-1. Go to **Settings** → **Devices & Services**
-2. ~~Click **Add Integration** and search for "OpenClaw Conversation"~~
-   - Comment: In this fork, search for **"OpenClaw Conversation AlfredPatch"**
+### 1. Add the base integration
+
+In Home Assistant:
+
+1. Go to **Settings → Devices & Services → Add Integration**.
+2. Search for **OpenClaw Conversation AlfredPatch**.
 3. Enter your OpenClaw server details:
-   - **OpenClaw URL**: Your OpenClaw server URL (e.g., `http://localhost:18789`)
-   - **Gateway Token**: Your OpenClaw Gateway token
-   - **Verify SSL**: Uncheck if using `http://` URLs or self-signed certificates
 
-> **Note:** You can generate a Gateway token by running `openclaw doctor --generate-gateway-token` on your OpenClaw instance. This will generate a token and save it to the gateway configuration.
+| Option | Description |
+|---|---|
+| OpenClaw URL | Base URL for your OpenClaw Gateway, for example `http://<openclaw-host>:18789` |
+| Gateway Token | Your OpenClaw Gateway bearer token |
+| Verify SSL | Disable only for trusted HTTP/LAN or self-signed certificate deployments |
 
-> **SSL/TLS:** If your OpenClaw instance uses `http://` (not HTTPS) or a self-signed certificate, disable "Verify SSL" during setup. For remote access, we recommend using [Tailscale](https://tailscale.com/) or a valid certificate from [Let's Encrypt](https://letsencrypt.org/).
+> Do not commit Gateway tokens, ha-mcp private URLs, or Home Assistant long-lived access tokens. The machines are already judgemental enough without leaking secrets into Git.
 
-### Agent Configuration
+### 2. Add a conversation agent
 
-After adding the integration, you need to add a conversation agent:
+After adding the integration:
 
-1. Click on the integration entry
-2. Click **Add** under "Conversation agent"
-3. Configure the agent with your settings:
+1. Open the integration entry.
+2. Click **Add** under **Conversation agents**.
+3. Configure the agent.
 
-| Option            | Description                                                                         |
-| ----------------- | ----------------------------------------------------------------------------------- |
-| HA MCP Server URL | Your ha-mcp server URL (e.g., `http://homeassistant.local:9583/private_XXXXX`)      |
-| Prompt Template   | System prompt with Jinja2 template support                                          |
-| Agent ID          | The agent to use (run `openclaw agents list` to see options, default: `main`)       |
-| Model Override    | Optional explicit model (e.g. `ollama/openclaw-32k`, `openai-codex/gpt-5.3-codex`) |
-| Session Key       | Optional key for session persistence (run `openclaw sessions list` to see sessions) |
+| Option | Description |
+|---|---|
+| HA MCP Server URL | Optional/private ha-mcp URL if the agent should control Home Assistant |
+| Prompt Template | System prompt with Jinja2 template support |
+| Agent ID | OpenClaw agent to use; default is `main` |
+| Model Override | Optional explicit provider/model for testing; normally leave blank |
+| Session Key | Optional stable session key, for example `agent:alfred:homeassistant` |
+| Context Threshold | Token threshold before context truncation |
+| Context truncation strategy | Currently supports clearing old messages |
 
-> **Agent ID:** Run `openclaw agents list` on your OpenClaw instance to see all configured agents. Most users will use `main` (the default).
+### Model selection priority
 
-> **Model selection priority:** `Model Override` → `openclaw:<agent_id>` → `openclaw` fallback.
->
-> **Operational recommendation:** For the most deterministic behavior, set the model directly on your OpenClaw agent (`openclaw agents list` / agent config) and use Model Override only for temporary testing.
->
-> **Session Key:** Setting a specific session key allows conversation context to persist between invocations (until it grows large enough to be auto-compacted). Run `openclaw sessions list` to see existing sessions. For example, `agent:main:homeassistant` creates a dedicated session for Home Assistant conversations.
+Conversation requests choose the model in this order:
 
-## Usage
+1. `Model Override`, if set.
+2. `openclaw:<agent_id>`, if Agent ID is set.
+3. `openclaw` fallback.
 
-1. Go to **Settings** → **Voice Assistants**
-2. Edit your assistant (or create a new one)
-3. ~~Select "OpenClaw Conversation" as the **Conversation agent**~~
-   - Comment: In this fork, select **"OpenClaw Conversation AlfredPatch"** as the Conversation agent
+Operationally, use a dedicated OpenClaw agent for Home Assistant voice traffic and leave Model Override blank unless you are deliberately testing routing.
 
-The agent uses [mcporter](http://mcporter.dev/) to communicate with Home Assistant via the [ha-mcp](https://homeassistant-ai.github.io/ha-mcp/) server. It can search for entities, control devices, manage automations, and more.
+## Attach to an Assist pipeline
 
-## Troubleshooting notes for maintainers
+1. Go to **Settings → Voice assistants**.
+2. Edit or create an Assist pipeline.
+3. Set **Conversation agent** to the OpenClaw Conversation AlfredPatch agent.
+4. Keep your preferred STT, TTS, and wake-word components.
 
-### "Found 2 occurrences of the text" during patching
+See [docs/marvin-openclaw-bridge.md](docs/marvin-openclaw-bridge.md) for a fuller bridge guide.
 
-If you use exact-match editors (or scripted text replacement), this error means the snippet you are replacing appears more than once in the file. In this repo, `strings.json` often has repeated keys between `conversation` and `ai_task_data` sections.
+## Smoke test OpenClaw
 
-- ~~Use a short snippet only~~
-  - Comment: This is brittle and can fail with duplicate matches.
-- Prefer a larger, unique context block (include nearby section headers/keys) so only one occurrence matches.
+From a shell that can reach OpenClaw:
 
-## Logging
-
-Add to `configuration.yaml` to enable debug logging:
-
-```yaml
-logger:
-  logs:
-    custom_components.openclaw_conversation: debug
+```bash
+export OPENCLAW_URL="http://<openclaw-host>:18789"
+export OPENCLAW_TOKEN="<gateway-token>"
+export OPENCLAW_MODEL="openclaw:main"
+python3 scripts/openclaw_smoke_test.py
 ```
 
-## License
+Expected result:
 
-This project is licensed under the [Universal Permissive License v1.0](LICENSE).
+```text
+/v1/models: HTTP 200
+/v1/chat/completions: HTTP 200
+Response: bridge-ok
+OK
+```
 
-## Credits
+## Troubleshooting
 
-Based on [Extended OpenAI Conversation](https://github.com/jekalmin/extended_openai_conversation) by [@jekalmin](https://github.com/jekalmin).
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| `401 Unauthorized` | Wrong/missing Gateway token | Re-enter the token in the integration config |
+| Connection refused | Wrong URL, gateway down, firewall/routing issue | Confirm the OpenClaw host and port are reachable from Home Assistant |
+| `/v1/models` works but conversation fails | Bad model/agent routing or payload issue | Run `scripts/openclaw_smoke_test.py`; start with Agent ID `main` |
+| Pipeline replies from wrong assistant | Assist pipeline still points at another conversation agent | Re-select the OpenClaw Conversation AlfredPatch agent |
+| Wake word detected but no useful reply | Conversation agent not attached to the pipeline | Edit the Assist pipeline and choose the OpenClaw agent |
+| OpenClaw says tool unavailable | Agent prompt/tool policy issue | Use a dedicated voice/house agent with only the required tools |
+
+
+## CI
+
+The remaining GitHub Actions workflow runs Home Assistant/HACS validation on pushes and pull requests. Claude Code workflows are intentionally not enabled in this public fork because they require repository secrets and broad write permissions; turn them back on only if you understand the blast radius. Which, historically, is where civilisation begins to wobble.
+
+## Public safety checklist
+
+Before publishing your own fork, check that you have not committed:
+
+- Gateway tokens or Authorization headers
+- Home Assistant long-lived access tokens
+- ha-mcp private URLs
+- Real public hostnames unless intentional
+- Internal IPs, entity IDs, or room names you consider private
+- Personal assistant prompts containing private context
+
+## Repository map
+
+- [AS_BUILT.md](AS_BUILT.md) — Sanitised reference architecture and deployment notes
+- [docs/marvin-openclaw-bridge.md](docs/marvin-openclaw-bridge.md) — Home Assistant/OpenClaw bridge configuration guide
+- [docs/ha-mcp-setup.md](docs/ha-mcp-setup.md) — ha-mcp setup notes
+- [scripts/openclaw_smoke_test.py](scripts/openclaw_smoke_test.py) — OpenClaw endpoint smoke test
+- [NOTICE.md](NOTICE.md) — upstream lineage and provenance
+
+## License and credits
+
+This project retains the upstream [Universal Permissive License v1.0](LICENSE).
+
+Based on [Extended OpenAI Conversation](https://github.com/jekalmin/extended_openai_conversation) by [@jekalmin](https://github.com/jekalmin), the original OpenClaw Conversation integration by [@Djelibeybi](https://github.com/Djelibeybi), and the AlfredPatch fork lineage.

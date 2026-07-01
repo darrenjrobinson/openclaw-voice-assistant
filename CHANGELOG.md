@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.1.3
+
+- Public repository readiness pass:
+  - sanitised live LAN/deployment values from public docs
+  - updated HACS and Home Assistant metadata to this repository
+  - added SECURITY.md with disclosure and deployment guidance
+  - refreshed README for HACS installation and OpenClaw agent routing
+  - removed Claude Code workflows that require repository secrets and should not auto-run on a public fork
+
 ## v1.1.2
 
 - Added debug logging for effective model selection in conversation requests:

@@ -2,7 +2,7 @@
 """Smoke test an OpenClaw OpenAI-compatible chat completions endpoint.
 
 Environment:
-  OPENCLAW_URL     Base URL, e.g. http://127.0.0.1:18789 or http://192.168.1.37:18789
+  OPENCLAW_URL     Base URL, e.g. http://127.0.0.1:18789 or http://<openclaw-host>:18789
   OPENCLAW_TOKEN   Gateway bearer token
   OPENCLAW_MODEL   Optional model, default openclaw:main
   OPENCLAW_AGENT   Optional x-openclaw-agent-id header, default main

@@ -1,12 +1,17 @@
 # Marvin Home Assistant → OpenClaw Text Bridge Guide
 
-This guide documents the Home Assistant side of the Marvin voice assistant bridge to OpenClaw.
+This guide documents the Home Assistant side of a local voice assistant bridge to OpenClaw.
 
 ## 1. Install via HACS
 
 1. Open **HACS** in Home Assistant.
 2. Open the menu → **Custom repositories**.
-3. Add this repository URL.
+3. Add this repository URL:
+
+   ```text
+   https://github.com/darrenjrobinson/openclaw-voice-assistant
+   ```
+
 4. Category: **Integration**.
 5. Install **OpenClaw Conversation AlfredPatch**.
 6. Restart Home Assistant.
@@ -19,15 +24,15 @@ Go to **Settings → Devices & Services → Add Integration** and search for:
 OpenClaw Conversation AlfredPatch
 ```
 
-Use these values for the Marvin LAN build:
+Use values like these, replacing placeholders with your own deployment details:
 
 | Field | Value |
 |---|---|
-| OpenClaw URL | `http://192.168.1.37:18789` |
-| Gateway Token | Existing OpenClaw gateway token — do not paste into docs |
-| Verify SSL | `false` / unchecked |
+| OpenClaw URL | `http://<openclaw-host>:18789` |
+| Gateway Token | Existing OpenClaw Gateway token — do not paste into docs |
+| Verify SSL | `false` / unchecked for trusted HTTP/LAN only |
 
-Use `http://127.0.0.1:18789` only from the OpenClaw host/WSL itself. Home Assistant and the ReSpeaker should use the LAN route.
+Use `http://127.0.0.1:18789` only from the OpenClaw host itself. Home Assistant and satellites usually need a LAN-routable address.
 
 ## 3. Add a conversation agent subentry
 
@@ -39,9 +44,9 @@ After the base integration is added:
 
 | Field | First smoke test | Recommended final |
 |---|---|---|
-| Name | `OpenClaw Marvin Bridge` | `OpenClaw Alfred Bridge` |
-| HA MCP Server URL | Leave/enter HA MCP URL if device control is required | Same |
-| Agent ID | `main` | `alfred` |
+| Name | `OpenClaw Voice Bridge` | `OpenClaw House Agent` |
+| HA MCP Server URL | Leave blank or enter a private ha-mcp URL if device control is required | Same |
+| Agent ID | `main` | `alfred` or another dedicated voice agent |
 | Model Override | blank | blank |
 | Session Key | `agent:main:homeassistant` | `agent:alfred:homeassistant` |
 | Context threshold | default | default |
@@ -53,19 +58,19 @@ Leave **Model Override** blank unless deliberately testing a provider/model. Wit
 In Home Assistant:
 
 1. Go to **Settings → Voice assistants**.
-2. Edit the `Marvin` pipeline.
+2. Edit your chosen Assist pipeline.
 3. Set **Conversation agent** to the OpenClaw Conversation AlfredPatch agent created above.
-4. Keep the existing local components:
+4. Keep your preferred local components, for example:
    - STT: Whisper / faster-whisper
-   - TTS: Piper `en_GB-alan-medium`
-   - Wake word: openWakeWord `okay_nabu`
+   - TTS: Piper
+   - Wake word: openWakeWord model selected in the pipeline
 
 ## 5. Validate OpenClaw before configuring HA
 
 From a shell that can reach OpenClaw:
 
 ```bash
-export OPENCLAW_URL="http://192.168.1.37:18789"
+export OPENCLAW_URL="http://<openclaw-host>:18789"
 export OPENCLAW_TOKEN="<gateway token>"
 python3 scripts/openclaw_smoke_test.py
 ```
@@ -77,7 +82,7 @@ Expected results:
 /v1/chat/completions: HTTP 200
 ```
 
-The model list may show:
+The model list may show slash-style IDs such as:
 
 ```text
 openclaw
@@ -85,7 +90,7 @@ openclaw/default
 openclaw/main
 ```
 
-That is fine. The chat completions endpoint has also been validated with colon routing:
+That is fine. The chat completions endpoint can also accept colon routing such as:
 
 ```text
 openclaw:main
@@ -95,33 +100,27 @@ openclaw:main
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| `401 Unauthorized` | Wrong/missing gateway token | Re-enter Gateway Token |
-| `Connection refused` | Wrong URL, gateway down, firewall/routing issue | Use `http://192.168.1.37:18789` from LAN; confirm OpenClaw is running |
+| `401 Unauthorized` | Wrong/missing Gateway token | Re-enter Gateway Token |
+| `Connection refused` | Wrong URL, gateway down, firewall/routing issue | Use a LAN-routable OpenClaw URL; confirm OpenClaw is running |
 | HA can reach `/v1/models` but conversation fails | Bad model/agent routing or bad request payload | Test with `scripts/openclaw_smoke_test.py`; start with Agent ID `main` |
-| Pipeline replies from wrong assistant | Satellite still bound to `preferred` pipeline/agent | Re-select the conversation agent and pipeline after any rename |
-| Wake word detected but no useful reply | Conversation agent not attached to pipeline | Edit `Marvin` pipeline and choose AlfredPatch agent |
-| Wake stream flaps open/closed | Satellite audio issue, not this integration | Check `journalctl -u wyoming-satellite -f` on ReSpeaker |
-| OpenClaw says tool unavailable | Agent prompt/tool policy issue | Use dedicated `alfred` agent with only required HA tools |
+| Pipeline replies from wrong assistant | Satellite/pipeline still bound to a different conversation agent | Re-select the conversation agent and pipeline after any rename |
+| Wake word detected but no useful reply | Conversation agent not attached to pipeline | Edit the Assist pipeline and choose AlfredPatch agent |
+| Wake stream flaps open/closed | Satellite audio issue, not this integration | Check the Wyoming satellite logs |
+| OpenClaw says tool unavailable | Agent prompt/tool policy issue | Use a dedicated voice/house agent with only required HA tools |
 
 ## 7. Security notes
 
-- Keep the OpenClaw gateway token out of Git.
-- Use the LAN endpoint only on trusted networks.
-- Do not expose OpenClaw Gateway or the ReSpeaker Wyoming port directly to the internet.
-- Prefer a dedicated Home Assistant/OpenClaw agent instead of routing HA traffic into the main Telegram session.
+- Keep the OpenClaw Gateway token out of Git.
+- Keep ha-mcp private URLs and Home Assistant long-lived access tokens out of Git.
+- Use LAN HTTP endpoints only on trusted networks.
+- Do not expose OpenClaw Gateway, ha-mcp, or a Wyoming satellite port directly to the internet.
+- Prefer a dedicated Home Assistant/OpenClaw agent instead of routing HA traffic into a human-facing chat session.
 
-## 8. ReSpeaker-side wake detection instrumentation
+## 8. ReSpeaker/Wyoming wake detection instrumentation
 
-If the satellite appears connected but the wake word never fires, add local event hooks to `wyoming-satellite`. These hooks prove whether Home Assistant is sending lifecycle events back to the satellite.
+If a Wyoming satellite appears connected but the wake word never fires, local event hooks can prove whether Home Assistant is sending lifecycle events back to the satellite.
 
-On the ReSpeaker, a logger was installed as:
-
-```text
-/usr/local/bin/wyoming-event-log
-/var/log/wyoming-satellite-events.log
-```
-
-The satellite launcher now includes event commands for:
+Example event hooks can log events such as:
 
 ```text
 startup
@@ -153,19 +152,11 @@ tts-start
 tts-stop
 ```
 
-Observed post-reboot failure sequence:
-
-```text
-startup
-streaming-start
-detect
-```
-
-No `detection` followed after saying the wake phrase. That proves:
+If the sequence stops at `detect`, then:
 
 - Home Assistant is connected to the satellite.
 - Home Assistant has instructed the satellite to stream audio for wake detection.
-- The ReSpeaker audio transport is alive.
+- The satellite audio transport is alive.
 - The wake engine did not recognise the phrase.
 
 At that point, inspect the Home Assistant openWakeWord add-on logs. Confirm the loaded model ID exactly matches the pipeline wake word selection. Watch for:
@@ -178,34 +169,25 @@ Detected ...
 
 ### ReSpeaker mixer note
 
-One ReSpeaker image booted with `CH1 volume` much lower than the other channels:
-
-```text
-CH1 volume = 52
-CH2-CH8 volume = 161
-```
-
-For this build, `CH1 volume` was changed to `161` to match the other channels. Before changing mixer settings, save backups:
+Some ReSpeaker images can boot with one microphone channel set much lower than the others. Before changing mixer settings, save backups:
 
 ```bash
-mkdir -p /root/oc-backups
-amixer -c 0 scontents > /root/oc-backups/amixer-scontents-before.txt
-alsactl -f /root/oc-backups/asound-state-before.state store 0
+mkdir -p ~/oc-backups
+amixer -c 0 scontents > ~/oc-backups/amixer-scontents-before.txt
+alsactl -f ~/oc-backups/asound-state-before.state store 0
 ```
 
-Then set CH1:
+Then inspect and adjust channel levels as appropriate for your hardware:
 
 ```bash
-amixer -c 0 sset 'CH1 volume' 161
+amixer -c 0 scontents
+amixer -c 0 sset "CH1 volume" <value>
 systemctl restart wyoming-satellite
 ```
 
-After the change, phrase audio peaks improved from roughly `-38/-41 dBFS` to about `-33 dBFS`, but wake detection still depended on Home Assistant/openWakeWord recognising the model.
-
-
 ### Wake model naming gotcha: `ok_nabu` vs `okay_nabu`
 
-Home Assistant's wake-word documentation refers to **"ok nabu"** for the openWakeWord add-on. Some ESPHome/microWakeWord examples use `okay_nabu`. Do not assume these are interchangeable.
+Home Assistant documentation often refers to **ok nabu** for the openWakeWord add-on. Some ESPHome/microWakeWord examples use `okay_nabu`. Do not assume these are interchangeable.
 
 When debugging no-detection cases, use the openWakeWord add-on log as the source of truth:
 
@@ -213,5 +195,4 @@ When debugging no-detection cases, use the openWakeWord add-on log as the source
 Loaded models: [...]
 ```
 
-Then make the Assist pipeline's streaming wake word match the loaded model/display entry exactly. A mismatch between `ok_nabu` and `okay_nabu` can leave the satellite connected and streaming forever with no `detection` event.
-
+Then make the Assist pipeline streaming wake word match the loaded model/display entry exactly. A mismatch between `ok_nabu` and `okay_nabu` can leave the satellite connected and streaming forever with no `detection` event.

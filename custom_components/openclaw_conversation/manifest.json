@@ -2,7 +2,7 @@
   "domain": "openclaw_conversation",
   "name": "OpenClaw Conversation AlfredPatch",
   "codeowners": [
-    "@Djelibeybi"
+    "@darrenjrobinson"
   ],
   "config_flow": true,
   "dependencies": [
@@ -11,10 +11,10 @@
     "history",
     "recorder"
   ],
-  "documentation": "https://github.com/Djelibeybi/openclaw_conversation",
+  "documentation": "https://github.com/darrenjrobinson/openclaw-voice-assistant",
   "integration_type": "service",
   "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/Djelibeybi/openclaw_conversation/issues",
+  "issue_tracker": "https://github.com/darrenjrobinson/openclaw-voice-assistant/issues",
   "requirements": [],
-  "version": "1.1.2"
+  "version": "1.1.3"
 }
