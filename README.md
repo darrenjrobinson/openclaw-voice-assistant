@@ -202,6 +202,7 @@ Before publishing your own fork, check that you have not committed:
 - [AS_BUILT.md](AS_BUILT.md) — Sanitised reference architecture and deployment notes
 - [docs/marvin-openclaw-bridge.md](docs/marvin-openclaw-bridge.md) — Home Assistant/OpenClaw bridge configuration guide
 - [docs/working-config-esp-s3-box-openclaw.md](docs/working-config-esp-s3-box-openclaw.md) — known-good ESP-S3-Box/OpenClaw/ha-mcp configuration
+- [docs/esphome-firmware-source.md](docs/esphome-firmware-source.md) — ESPHome/ESP Web Tools firmware source and OpenClaw firmware fork path
 - [docs/esp-s3-box-wakeword-lag.md](docs/esp-s3-box-wakeword-lag.md) — ESP-S3-Box post-TTS wake-word lag notes
 - [docs/ha-mcp-setup.md](docs/ha-mcp-setup.md) — ha-mcp + MCPorter setup notes
 - [scripts/openclaw_smoke_test.py](scripts/openclaw_smoke_test.py) — OpenClaw endpoint smoke test
