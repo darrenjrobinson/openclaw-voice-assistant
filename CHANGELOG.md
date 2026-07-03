@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.1.4
+
+- Fixed Home Assistant config subentry flows that could open directly at `init` and crash with `Config flow could not be loaded: unknown error` before `self.options` was initialised.
+- Changed the HA MCP field from URL-only to free text so it can accept a MCPorter server selector such as `ha`.
+- Updated the default prompt for MCPorter selector mode:
+  - uses `mcporter call ha.<tool>` style calls
+  - removes `--allow-http` for configured selectors
+  - updates ha-mcp tool hints to current names such as `ha_search`, `ha_get_overview`, `ha_get_state`, and `ha_call_service`
+- Added known-good ESP-S3-Box → Home Assistant → OpenClaw working configuration documentation.
+- Updated ha-mcp/MCPorter setup docs to use a stdio wrapper that reads Home Assistant credentials from environment variables instead of embedding tokens in config.
+
 ## v1.1.3
 
 - Public repository readiness pass:

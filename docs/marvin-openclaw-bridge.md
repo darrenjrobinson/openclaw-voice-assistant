@@ -45,13 +45,15 @@ After the base integration is added:
 | Field | First smoke test | Recommended final |
 |---|---|---|
 | Name | `OpenClaw Voice Bridge` | `OpenClaw House Agent` |
-| HA MCP Server URL | Leave blank or enter a private ha-mcp URL if device control is required | Same |
+| HA MCP server selector or URL | `ha` when using the MCPorter stdio setup, or blank for pure chat | `ha` or a protected private ha-mcp URL |
 | Agent ID | `main` | `alfred` or another dedicated voice agent |
 | Model Override | blank | blank |
 | Session Key | `agent:main:homeassistant` | `agent:alfred:homeassistant` |
 | Context threshold | default | default |
 
 Leave **Model Override** blank unless deliberately testing a provider/model. With the override blank, this fork sends `model: openclaw:<agent_id>`.
+
+If using the documented MCPorter setup, put `ha` in **HA MCP server selector or URL**. That is a configured MCPorter server selector on the OpenClaw host, not a Home Assistant frontend URL.
 
 ## 4. Attach to the Assist pipeline
 
@@ -107,6 +109,8 @@ openclaw:main
 | Wake word detected but no useful reply | Conversation agent not attached to pipeline | Edit the Assist pipeline and choose AlfredPatch agent |
 | Wake stream flaps open/closed | Satellite audio issue, not this integration | Check the Wyoming satellite logs |
 | OpenClaw says tool unavailable | Agent prompt/tool policy issue | Use a dedicated voice/house agent with only required HA tools |
+| Prompt uses stale ha-mcp tool names | Old stored prompt from an existing subentry | Update the prompt to use `ha_search`, `ha_get_overview`, `ha_get_state`, `ha_call_service`, and `mcporter call ha.<tool>` without `--allow-http` |
+| `ha` is not accepted in HA MCP field | Older integration still has URL-only selector | Update to v1.1.4+ or use URL mode `http://127.0.0.1:8086/mcp` from the OpenClaw host |
 
 ## 7. Security notes
 

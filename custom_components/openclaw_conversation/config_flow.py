@@ -165,7 +165,7 @@ class OpenClawConversationConfigFlow(ConfigFlow, domain=DOMAIN):
             # Normalize the URL by stripping trailing slash
             user_input[CONF_OPENCLAW_URL] = user_input[CONF_OPENCLAW_URL].rstrip("/")
             # Don't create default subentries - user must add conversation agents
-            # manually so they can provide the required HA MCP URL
+            # manually so they can provide the HA MCP selector/URL
             return self.async_create_entry(
                 title=user_input.get(CONF_NAME, DEFAULT_NAME),
                 data=user_input,
@@ -192,6 +192,23 @@ class OpenClawSubentryFlowHandler(ConfigSubentryFlow):
 
     options: dict[str, Any]
 
+    def _ensure_options(self) -> None:
+        """Ensure options are initialised before rendering the form.
+
+        Some Home Assistant builds start config subentry flows directly at the
+        ``init`` step instead of entering through ``user``. In that path
+        ``async_step_user`` is never called, so ``self.options`` has not been
+        created yet. Rendering the form would then raise AttributeError and the
+        frontend only shows the deeply illuminating "unknown error" message.
+        """
+        if hasattr(self, "options"):
+            return
+
+        if self.source == "reconfigure":
+            self.options = dict(self._get_reconfigure_subentry().data)
+        else:
+            self.options = dict(DEFAULT_OPTIONS)
+
     @property
     def _is_new(self) -> bool:
         """Return if this is a new subentry."""
@@ -215,6 +232,8 @@ class OpenClawSubentryFlowHandler(ConfigSubentryFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> SubentryFlowResult:
         """Manage the options."""
+        self._ensure_options()
+
         # Abort if entry is not loaded
         if self._get_entry().state != ConfigEntryState.LOADED:
             return self.async_abort(reason="entry_not_loaded")
@@ -252,8 +271,11 @@ class OpenClawSubentryFlowHandler(ConfigSubentryFlow):
     def openclaw_config_option_schema(self, options: dict[str, Any]) -> dict:
         """Return a schema for OpenClaw conversation options."""
         return {
-            vol.Required(CONF_HA_MCP_URL): TextSelector(
-                TextSelectorConfig(type=TextSelectorType.URL)
+            vol.Optional(
+                CONF_HA_MCP_URL,
+                default=options.get(CONF_HA_MCP_URL, ""),
+            ): TextSelector(
+                TextSelectorConfig()
             ),
             vol.Optional(
                 CONF_PROMPT,
@@ -299,6 +321,16 @@ class OpenClawAITaskSubentryFlowHandler(ConfigSubentryFlow):
 
     options: dict[str, Any]
 
+    def _ensure_options(self) -> None:
+        """Ensure options are initialised before rendering the form."""
+        if hasattr(self, "options"):
+            return
+
+        if self.source == "reconfigure":
+            self.options = dict(self._get_reconfigure_subentry().data)
+        else:
+            self.options = dict(DEFAULT_AI_TASK_OPTIONS)
+
     @property
     def _is_new(self) -> bool:
         """Return if this is a new subentry."""
@@ -322,6 +354,8 @@ class OpenClawAITaskSubentryFlowHandler(ConfigSubentryFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> SubentryFlowResult:
         """Manage the options."""
+        self._ensure_options()
+
         # Abort if entry is not loaded
         if self._get_entry().state != ConfigEntryState.LOADED:
             return self.async_abort(reason="entry_not_loaded")

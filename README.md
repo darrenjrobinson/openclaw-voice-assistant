@@ -56,7 +56,8 @@ That lets Home Assistant target a dedicated house/voice agent with its own promp
 - Configurable Agent ID and stable Session Key
 - Optional explicit Model Override for testing
 - OpenClaw gateway smoke-test script
-- Documentation for Home Assistant Assist, HACS, and ReSpeaker/Wyoming-style satellite deployments
+- MCPorter/ha-mcp selector mode for Home Assistant device control
+- Documentation for Home Assistant Assist, HACS, ESP-S3-Box, and ReSpeaker/Wyoming-style satellite deployments
 
 ## Installation
 
@@ -118,7 +119,7 @@ After adding the integration:
 
 | Option | Description |
 |---|---|
-| HA MCP Server URL | Optional/private ha-mcp URL if the agent should control Home Assistant |
+| HA MCP server selector or URL | Optional MCPorter server selector such as `ha`, or a private ha-mcp URL if the agent should control Home Assistant |
 | Prompt Template | System prompt with Jinja2 template support |
 | Agent ID | OpenClaw agent to use; default is `main` |
 | Model Override | Optional explicit provider/model for testing; normally leave blank |
@@ -142,6 +143,8 @@ Operationally, use a dedicated OpenClaw agent for Home Assistant voice traffic a
 2. Edit or create an Assist pipeline.
 3. Set **Conversation agent** to the OpenClaw Conversation AlfredPatch agent.
 4. Keep your preferred STT, TTS, and wake-word components.
+
+For the known-good ESP-S3-Box path, see [docs/working-config-esp-s3-box-openclaw.md](docs/working-config-esp-s3-box-openclaw.md).
 
 See [docs/marvin-openclaw-bridge.md](docs/marvin-openclaw-bridge.md) for a fuller bridge guide.
 
@@ -175,6 +178,8 @@ OK
 | Pipeline replies from wrong assistant | Assist pipeline still points at another conversation agent | Re-select the OpenClaw Conversation AlfredPatch agent |
 | Wake word detected but no useful reply | Conversation agent not attached to the pipeline | Edit the Assist pipeline and choose the OpenClaw agent |
 | OpenClaw says tool unavailable | Agent prompt/tool policy issue | Use a dedicated voice/house agent with only the required tools |
+| HA MCP field rejects `ha` | Old integration version or URL-only selector | Update to v1.1.4+ or use a local ha-mcp-web URL temporarily |
+| Agent calls `ha_search_entities` | Old stored prompt | Update the prompt; current ha-mcp search tool is `ha_search` |
 
 
 ## CI
@@ -196,7 +201,9 @@ Before publishing your own fork, check that you have not committed:
 
 - [AS_BUILT.md](AS_BUILT.md) — Sanitised reference architecture and deployment notes
 - [docs/marvin-openclaw-bridge.md](docs/marvin-openclaw-bridge.md) — Home Assistant/OpenClaw bridge configuration guide
-- [docs/ha-mcp-setup.md](docs/ha-mcp-setup.md) — ha-mcp setup notes
+- [docs/working-config-esp-s3-box-openclaw.md](docs/working-config-esp-s3-box-openclaw.md) — known-good ESP-S3-Box/OpenClaw/ha-mcp configuration
+- [docs/esp-s3-box-wakeword-lag.md](docs/esp-s3-box-wakeword-lag.md) — ESP-S3-Box post-TTS wake-word lag notes
+- [docs/ha-mcp-setup.md](docs/ha-mcp-setup.md) — ha-mcp + MCPorter setup notes
 - [scripts/openclaw_smoke_test.py](scripts/openclaw_smoke_test.py) — OpenClaw endpoint smoke test
 - [NOTICE.md](NOTICE.md) — upstream lineage and provenance
 

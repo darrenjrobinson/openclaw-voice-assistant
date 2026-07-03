@@ -1,189 +1,191 @@
-# Using OpenClaw with ha-mcp via mcporter
+# Using OpenClaw with ha-mcp via MCPorter
 
-This guide explains how to give your OpenClaw agent direct access to Home Assistant using the [ha-mcp](https://homeassistant-ai.github.io/ha-mcp/) server and the [mcporter](https://mcporter.dev/) CLI.
+This guide explains how to give an OpenClaw agent access to Home Assistant using [ha-mcp](https://homeassistant-ai.github.io/ha-mcp/) and [MCPorter](https://github.com/openclaw/mcporter).
 
-## Overview
+## Working pattern
 
-With this setup, your OpenClaw agent can:
+The current recommended pattern is:
 
-- Search and control any HA entity
-- Create, edit, and debug automations
-- Manage dashboards, scripts, helpers, and blueprints
-- Query history and statistics
-- Manage HACS packages
-- And much more (90+ tools)
+```text
+OpenClaw agent
+  → shell command
+  → mcporter call ha.<tool>
+  → MCPorter configured server `ha`
+  → ha-mcp stdio server
+  → Home Assistant APIs
+```
+
+The Home Assistant Conversation integration stores the MCPorter selector `ha` in the **HA MCP server selector or URL** field. The prompt then tells OpenClaw to call:
+
+```bash
+mcporter call ha.<tool> [args]
+```
+
+Do **not** add `--allow-http` when calling the configured `ha` selector. Use `--allow-http` only when calling a direct cleartext `http://...` MCP URL.
 
 ## Prerequisites
 
-- OpenClaw installed and running
-- Home Assistant (any installation type)
-- Node.js (for `mcporter`)
+- OpenClaw installed and running.
+- Home Assistant reachable from the OpenClaw host.
+- A Home Assistant long-lived access token.
+- `uv` / `uvx` on the OpenClaw host.
+- `mcporter` on the OpenClaw host.
 
----
+## Environment variables
 
-## Human Setup
-
-These steps are done by you, the human, to prepare the infrastructure.
-
-### Step 1: Install ha-mcp on Home Assistant
-
-The ha-mcp server runs as a Home Assistant add-on or standalone container.
-
-### Option A: HACS Add-on (Recommended)
-
-1. Add the ha-mcp repository to HACS
-2. Install the "HA-MCP Server" add-on
-3. Start the add-on
-4. Note the URL shown in the add-on logs (e.g., `http://<home-assistant-ip>:9583/private_XXXXX`)
-
-### Option B: Docker
+Store Home Assistant connection details outside the repository. Store these in a local environment file outside the repository, for example `<openclaw-env-file>`:
 
 ```bash
-docker run -d \
-  -e HA_URL=http://<home-assistant-ip>:8123 \
-  -e HA_TOKEN=your_long_lived_access_token \
-  -p 9583:9583 \
-  ghcr.io/homeassistant-ai/ha-mcp
+HOMEASSISTANT_URL=<home-assistant-url>
+HOMEASSISTANT_TOKEN=<home-assistant-long-lived-access-token>
 ```
 
-### Step 2: Install mcporter
+Never commit the token.
 
-`mcporter` is a CLI tool for interacting with MCP servers. **Install it on the same machine as your OpenClaw agent** so the agent can execute `mcporter` commands directly.
+## Install runtime tools
 
 ```bash
+python3 -m pip install --break-system-packages 'uv>=0.5'
 npm install -g mcporter
 ```
 
-Verify installation:
+`ha-mcp` requires Python 3.13. `uvx --python 3.13 ...` can download/use a managed Python 3.13 runtime if the system Python is older.
+
+## Create a ha-mcp stdio wrapper
+
+Create a wrapper on the OpenClaw host, for example at `<openclaw-workspace>/bin/ha-mcp-stdio`:
 
 ```bash
-mcporter --version
+mkdir -p <openclaw-workspace>/bin
+cat > <openclaw-workspace>/bin/ha-mcp-stdio <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+set -a
+source <openclaw-env-file>
+set +a
+exec /usr/local/bin/uvx --python 3.13 --from ha-mcp@7.9.0 ha-mcp
+SH
+chmod 700 <openclaw-workspace>/bin/ha-mcp-stdio
 ```
 
-> **Note:** If your OpenClaw agent runs in a container or on a different host, ensure mcporter is installed there, not on your local machine.
+The wrapper reads secrets at runtime so MCPorter config does not contain the Home Assistant token.
 
-### Step 3: Test the Connection
-
-List available tools from your ha-mcp server:
+## Register the MCPorter server
 
 ```bash
-mcporter list http://<home-assistant-ip>:9583/private_XXXXXX --allow-http
+mcporter config add ha \
+  --command <openclaw-workspace>/bin/ha-mcp-stdio \
+  --description "Home Assistant MCP via ha-mcp stdio wrapper" \
+  --scope home
 ```
 
-You should see 90+ tools listed with descriptions.
-
-### Step 4: Configure the Integration
-
-1. Go to **Settings** → **Devices & Services**
-2. Find your OpenClaw Conversation integration
-3. Click **Add** to create a new conversation agent
-4. Enter your `ha-mcp` URL in the **HA MCP Server URL** field
-
-The default prompt template will automatically use this URL for `mcporter` commands.
-
-Once the infrastructure is ready, tell your agent about it. You can either add this to `TOOLS.md` yourself, or ask your agent to do it.
-
-## Agent Setup
-
-### Step 5: Add ha-mcp to the Agent's TOOLS.md
-
-Add the following to your OpenClaw workspace's `TOOLS.md` so the agent knows how to use it:
-
-````markdown
-## Home Assistant MCP
-
-Access Home Assistant via mcporter + ha-mcp server:
-
-    ```bash
-    mcporter call <HA-MCP-URL>/<tool> --allow-http [args]
-    ```
-
-Key tools:
-
-- `ha_search_entities query="..."` — find entities
-- `ha_call_service domain=X service=Y entity_id=Z` — control devices
-- `ha_config_list_areas` — list rooms/areas
-- `ha_config_get_automation` — view automations
-- `ha_config_set_automation` — create/edit automations
-- `ha_get_history` — query entity history
-
-90+ tools total.
-
-Use `mcporter list <HA-MCP-URL> --allow-http` for full list.
-````
-
-_Replace `<HA-MCP-URL>` with your actual `ha-mcp` endpoint._
-
-## Usage Examples (Agent)
-
-These are examples of what your agent can now do. You can ask it to run these, or it may use them autonomously when relevant.
-
-### Search for entities
+Inspect it:
 
 ```bash
-mcporter call <HA-MCP-URL>/ha_search_entities \
-  --allow-http query="kitchen light"
+mcporter config get ha --json
 ```
 
-### Turn on a light
+## Verify the bridge
 
 ```bash
-mcporter call <HA-MCP-URL>/ha_call_service \
-  --allow-http \
-  domain=light \
-  service=turn_on \
-  entity_id=light.kitchen
+mcporter list ha --status --json --timeout 120000
 ```
 
-### List all areas
+Expected: counts show one `ok` server and the `ha` server status is `ok`.
 
 ```bash
-mcporter call <HA-MCP-URL>/ha_config_list_areas \
-  --allow-http
+mcporter call ha.ha_get_overview --timeout 120000 --output json
 ```
 
-### Get automation details
+Expected: Home Assistant summary data including version, entity count, domain count, service count, and area count.
+
+## Useful tools
+
+Run this to see all available tools:
 
 ```bash
-mcporter call <HA-MCP-URL>/ha_config_get_automation \
-  --allow-http \
-  automation_id=automation.morning_lights
+mcporter list ha --brief --timeout 120000
 ```
 
-### Create a new automation
+Common tools:
+
+| Tool | Purpose |
+|---|---|
+| `ha_get_overview` | Summarise Home Assistant and entity counts |
+| `ha_search` | Search entities, automations, scripts, scenes, helpers |
+| `ha_get_state` | Get state/attributes for an entity |
+| `ha_call_service` | Call a Home Assistant service, e.g. turn on a light |
+| `ha_list_services` | List available services |
+| `ha_list_floors_areas` | List floors/areas |
+| `ha_get_logs` | Read recent Home Assistant logs |
+| `ha_get_integration` | Inspect integration/config-entry state |
+
+Example calls:
 
 ```bash
-mcporter call <HA-MCP-URL>/ha_config_set_automation \
-  --allow-http --args '{
-    "alias": "Turn on porch light at sunset",
-    "trigger": [{"platform": "sun", "event": "sunset"}],
-    "action": [{"service": "light.turn_on", "target": {"entity_id": "light.porch"}}]
-  }'
-
+mcporter call ha.ha_search query="kitchen light" limit=10
+mcporter call ha.ha_get_state entity_id="light.kitchen"
+mcporter call ha.ha_call_service domain="light" service="turn_on" entity_id="light.kitchen"
 ```
 
-## Security Notes
+## Configure OpenClaw Conversation
 
-- The ha-mcp URL contains a private token — treat it like a password
-- Use `--allow-http` only for local/trusted networks
-- For remote access, set up ha-mcp behind HTTPS (e.g., via Tailscale or a reverse proxy)
+In the Home Assistant `OpenClaw Conversation AlfredPatch` conversation subentry:
+
+| Field | Value |
+|---|---|
+| HA MCP server selector or URL | `ha` |
+| Agent ID | `main` for first smoke test; later a dedicated agent such as `alfred` |
+| Model Override | blank |
+| Session Key | `agent:main:homeassistant` for first smoke test |
+
+Prompt pattern:
+
+```text
+To query or control Home Assistant, use mcporter like this:
+
+mcporter call ha.<tool> [args]
+
+Do not use --allow-http with the ha selector.
+```
+
+## Optional HTTP URL mode
+
+If a client cannot use MCPorter configured server selectors and truly needs an MCP URL, run `ha-mcp-web`:
+
+```bash
+set -a
+source <openclaw-env-file>
+set +a
+export MCP_HOST=127.0.0.1
+export MCP_PORT=8086
+export MCP_SECRET_PATH=/mcp
+uvx --python 3.13 --from ha-mcp@7.9.0 ha-mcp-web
+```
+
+Local URL:
+
+```text
+http://127.0.0.1:8086/mcp
+```
+
+Only use this URL from the OpenClaw host itself. Do not expose this endpoint publicly.
 
 ## Troubleshooting
 
-### "HTTP endpoints require --allow-http"
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| `Ad-hoc servers require either --http-url or --stdio` | Used `--allow-http` with configured selector `ha` | Remove `--allow-http` |
+| `ha` is rejected as a URL in the HA UI | Old integration field still enforces URL selector | Update to v1.1.4+ or use URL mode temporarily |
+| Tool not found | Prompt lists stale ha-mcp tool names | Use `mcporter list ha --brief`; current search tool is `ha_search`, not `ha_search_entities` |
+| Auth failure | Bad `HOMEASSISTANT_TOKEN` | Regenerate/reload long-lived access token |
+| HA API unreachable | Wrong `HOMEASSISTANT_URL` or network path | Confirm `curl -H "Authorization: Bearer ..." $HOMEASSISTANT_URL/api/` returns 200 |
+| ha-mcp requires Python 3.13 | System Python too old | Use `uvx --python 3.13 --from ha-mcp@7.9.0 ha-mcp` |
 
-Add `--allow-http` to your mcporter command. This is required for non-HTTPS URLs.
+## Security notes
 
-### Connection refused
-
-- Verify ha-mcp is running: check the add-on logs or container status
-- Verify the URL is correct and accessible from your OpenClaw host
-- Check firewall rules if HA and OpenClaw are on different machines
-
-### Tool not found
-
-Use `mcporter list <HA-MCP-URL> --allow-http` to see all available tools and their exact names.
-
----
-
-_Written by the OpenClaw instance named DjeliClaude for the OpenClaw community._
+- Keep `HOMEASSISTANT_TOKEN` out of Git.
+- Keep OpenClaw Gateway tokens out of Git.
+- Prefer MCPorter stdio selector mode over exposing a network MCP endpoint.
+- If HTTP mode is required, bind to `127.0.0.1` unless you have a specific protected network design.
+- Do not expose OpenClaw, ha-mcp, or Home Assistant long-lived-token backed services directly to the internet.
