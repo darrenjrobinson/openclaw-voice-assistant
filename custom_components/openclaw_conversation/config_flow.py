@@ -44,6 +44,7 @@ from .const import (
     CONF_MODEL_OVERRIDE,
     CONF_OPENCLAW_URL,
     CONF_PROMPT,
+    CONF_REQUEST_TIMEOUT,
     CONF_SESSION_KEY,
     CONF_VERIFY_SSL,
     CONTEXT_TRUNCATE_STRATEGIES,
@@ -55,6 +56,7 @@ from .const import (
     DEFAULT_CONVERSATION_NAME,
     DEFAULT_NAME,
     DEFAULT_PROMPT,
+    DEFAULT_REQUEST_TIMEOUT,
     DEFAULT_SESSION_KEY,
     DEFAULT_VERIFY_SSL,
     DOMAIN,
@@ -80,6 +82,7 @@ DEFAULT_OPTIONS = types.MappingProxyType(
         CONF_PROMPT: DEFAULT_PROMPT,
         CONF_AGENT_ID: DEFAULT_AGENT_ID,
         CONF_MODEL_OVERRIDE: DEFAULT_MODEL_OVERRIDE,
+        CONF_REQUEST_TIMEOUT: DEFAULT_REQUEST_TIMEOUT,
         CONF_SESSION_KEY: DEFAULT_SESSION_KEY,
         CONF_CONTEXT_THRESHOLD: DEFAULT_CONTEXT_THRESHOLD,
         CONF_CONTEXT_TRUNCATE_STRATEGY: DEFAULT_CONTEXT_TRUNCATE_STRATEGY,
@@ -293,6 +296,14 @@ class OpenClawSubentryFlowHandler(ConfigSubentryFlow):
                 CONF_SESSION_KEY,
                 default=DEFAULT_SESSION_KEY,
             ): str,
+            vol.Optional(
+                CONF_REQUEST_TIMEOUT,
+                default=DEFAULT_REQUEST_TIMEOUT,
+            ): NumberSelector(
+                NumberSelectorConfig(
+                    min=30, max=3600, step=30, mode=NumberSelectorMode.BOX
+                )
+            ),
             vol.Optional(
                 CONF_CONTEXT_THRESHOLD,
                 default=DEFAULT_CONTEXT_THRESHOLD,

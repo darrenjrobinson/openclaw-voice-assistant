@@ -25,11 +25,13 @@ from .const import (
     CONF_CONTEXT_TRUNCATE_STRATEGY,
     CONF_MODEL_OVERRIDE,
     CONF_OPENCLAW_URL,
+    CONF_REQUEST_TIMEOUT,
     CONF_SESSION_KEY,
     CONF_VERIFY_SSL,
     DEFAULT_AGENT_ID,
     DEFAULT_CONTEXT_THRESHOLD,
     DEFAULT_CONTEXT_TRUNCATE_STRATEGY,
+    DEFAULT_REQUEST_TIMEOUT,
     DEFAULT_VERIFY_SSL,
     DOMAIN,
 )
@@ -154,6 +156,30 @@ class OpenClawBaseLLMEntity(Entity):
         base_url = self.entry.data[CONF_OPENCLAW_URL].rstrip("/")
         return f"{base_url}/v1/chat/completions"
 
+    def _get_request_timeout(self) -> float:
+        """Return the OpenClaw request timeout in seconds."""
+        raw_timeout = self.subentry.data.get(
+            CONF_REQUEST_TIMEOUT, DEFAULT_REQUEST_TIMEOUT
+        )
+        try:
+            timeout = float(raw_timeout)
+        except (TypeError, ValueError):
+            _LOGGER.warning(
+                "Invalid OpenClaw request timeout %r; using default %s seconds",
+                raw_timeout,
+                DEFAULT_REQUEST_TIMEOUT,
+            )
+            return float(DEFAULT_REQUEST_TIMEOUT)
+
+        if timeout < 30:
+            _LOGGER.warning(
+                "OpenClaw request timeout %s is below minimum; using 30 seconds",
+                timeout,
+            )
+            return 30.0
+
+        return timeout
+
     async def _async_handle_chat_log(
         self,
         chat_log: conversation.ChatLog,
@@ -212,6 +238,7 @@ class OpenClawBaseLLMEntity(Entity):
         client = self._get_httpx_client()
         api_url = self._get_api_url()
         headers = self._get_headers()
+        request_timeout = self._get_request_timeout()
 
         # Note: We use HA's shared client, so we don't close it
         async with client.stream(
@@ -219,7 +246,7 @@ class OpenClawBaseLLMEntity(Entity):
             api_url,
             headers=headers,
             json=request_body,
-            timeout=60.0,
+            timeout=httpx.Timeout(request_timeout, connect=10.0),
         ) as response:
             response.raise_for_status()
 

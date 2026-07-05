@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.1.5
+
+- Added configurable OpenClaw request timeout for Conversation agent subentries.
+- Raised the default streaming response timeout from 60 seconds to 300 seconds for long-running voice tasks.
+- Kept connection timeout at 10 seconds so unreachable gateways still fail quickly.
+
 ## v1.1.4
 
 - Fixed Home Assistant config subentry flows that could open directly at `init` and crash with `Config flow could not be loaded: unknown error` before `self.options` was initialised.

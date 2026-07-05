@@ -59,13 +59,15 @@
             "model_override": "Model Override (optional)",
             "session_key": "Session Key",
             "context_threshold": "Context Threshold",
-            "context_truncate_strategy": "Context truncation strategy"
+            "context_truncate_strategy": "Context truncation strategy",
+            "request_timeout": "Request timeout"
           },
           "data_description": {
             "ha_mcp_url": "MCPorter server selector (for example, ha) or a direct ha-mcp URL",
             "agent_id": "The agent to use (run 'openclaw agents list' to see options, default: main)",
             "model_override": "Optional explicit model (e.g., 'ollama/openclaw-32k' or 'openai-codex/gpt-5.3-codex'). If set, this overrides Agent ID model routing.",
-            "session_key": "Optional key for session persistence (run 'openclaw sessions list' to see sessions)"
+            "session_key": "Optional key for session persistence (run 'openclaw sessions list' to see sessions)",
+            "request_timeout": "Maximum seconds to wait for OpenClaw to stream a response before Home Assistant aborts the request. Use a larger value for long-running voice tasks."
           }
         }
       }

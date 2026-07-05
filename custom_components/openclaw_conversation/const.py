@@ -11,11 +11,13 @@ CONF_HA_MCP_URL = "ha_mcp_url"
 CONF_SESSION_KEY = "session_key"
 CONF_AGENT_ID = "agent_id"
 CONF_MODEL_OVERRIDE = "model_override"
+CONF_REQUEST_TIMEOUT = "request_timeout"
 CONF_VERIFY_SSL = "verify_ssl"
 
 # Defaults
 DEFAULT_AGENT_ID = "main"
 DEFAULT_MODEL_OVERRIDE = ""
+DEFAULT_REQUEST_TIMEOUT = 300
 DEFAULT_SESSION_KEY = ""
 DEFAULT_VERIFY_SSL = True
 
