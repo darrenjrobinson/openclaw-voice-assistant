@@ -168,6 +168,46 @@ Response: bridge-ok
 OK
 ```
 
+## Routing to a non-default agent
+
+When you rename the default agent from `main` to something else (for example `marvin`), or when you split agents across multiple Telegram bots, the HA Conversation subentry must be updated to match. The integration builds the model field as `openclaw:<agent_id>` and sends the bare Agent ID as the `x-openclaw-agent-id` header — so the field should contain **only the agent ID**, not the full model path.
+
+Three things to get right when re-pointing the voice assistant to a renamed or non-default agent:
+
+1. **Agent ID field** — set to the bare agent ID (e.g. `marvin`), not the full model path (`openclaw/marvin`). The integration prepends `openclaw:` automatically.
+2. **Session Key field** — must match the agent ID. If the agent ID is `marvin`, the session key should be `agent:marvin:homeassistant`, not `agent:main:homeassistant`. A mismatch causes OpenClaw to create a fresh session that loads default bootstrap files instead of the agent's workspace SOUL.md, MEMORY.md, etc.
+3. **Context Threshold** — if the agent has a large system prompt (workspace bootstrap files like AGENTS.md, SOUL.md, MEMORY.md, TOOLS.md can total 25–35K tokens), set the Context Threshold high enough that the model has room to respond. 13000 is too low for a full Marvin-style workspace; 60000 is a safe default.
+
+After changing any of these fields, reload the OpenClaw Conversation integration in HA (Settings → Devices & Services → OpenClaw Conversation AlfredPatch → ⋮ → Reload) and restart the voice satellite if needed.
+
+### Example: splitting Marvin and Shadowverse
+
+In this setup, two OpenClaw agents share one gateway but serve different Telegram bots:
+
+| Agent | ID | Workspace | Telegram account | Purpose |
+|---|---|---|---|---|
+| Marvin | `marvin` (default) | `~/.openclaw/workspace` | `default` | Personal assistant, voice |
+| Shadowverse | `shadowverse` | `~/.openclaw/wiki/main` | `shadowverse` | IAM research brain |
+
+Bindings in `openclaw.json`:
+
+```json
+[
+  {"agentId": "shadowverse", "match": {"channel": "telegram", "accountId": "shadowverse"}},
+  {"agentId": "marvin", "match": {"channel": "telegram", "accountId": "default"}}
+]
+```
+
+HA Conversation subentry for the voice assistant:
+
+| Field | Value |
+|---|---|
+| Agent ID | `marvin` |
+| Model Override | _(blank)_ |
+| Session Key | `agent:marvin:homeassistant` |
+| Context Threshold | `60000` |
+| Context truncation strategy | `Clear All Messages` |
+
 ## Troubleshooting
 
 | Symptom | Likely cause | Fix |
@@ -175,6 +215,9 @@ OK
 | `401 Unauthorized` | Wrong/missing Gateway token | Re-enter the token in the integration config |
 | Connection refused | Wrong URL, gateway down, firewall/routing issue | Confirm the OpenClaw host and port are reachable from Home Assistant |
 | `/v1/models` works but conversation fails | Bad model/agent routing or payload issue | Run `scripts/openclaw_smoke_test.py`; start with Agent ID `main` |
+| `Unknown agent 'openclaw/marvin'` | Agent ID field contains the full model path instead of the bare agent ID | Set Agent ID to `marvin` (the integration prepends `openclaw:`) |
+| `stopReason=length` / incomplete turn | Context Threshold too low for the agent's system prompt | Increase Context Threshold to 60000 or higher |
+| Voice assistant responds with blank/stock identity | Session Key doesn't match the agent ID | Update Session Key to `agent:<agent_id>:homeassistant` |
 | Pipeline replies from wrong assistant | Assist pipeline still points at another conversation agent | Re-select the OpenClaw Conversation AlfredPatch agent |
 | Wake word detected but no useful reply | Conversation agent not attached to the pipeline | Edit the Assist pipeline and choose the OpenClaw agent |
 | OpenClaw says tool unavailable | Agent prompt/tool policy issue | Use a dedicated voice/house agent with only the required tools |
